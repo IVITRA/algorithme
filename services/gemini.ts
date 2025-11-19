@@ -28,9 +28,9 @@ export const validateSnippet = async (
   // Algorithm specific strictness
   let algoRules = "";
   if (algoType === AlgorithmType.BUBBLE) {
-    algoRules = "ALGORITHM MISMATCH CHECK: This is BUBBLE SORT. You MUST REJECT logic that uses 'min_idx', 'min', or searches for the smallest element (Selection Sort logic). Bubble sort MUST compare adjacent elements (j, j+1).";
+    algoRules = "ALGORITHM MISMATCH CHECK: This is BUBBLE SORT. You MUST REJECT logic that uses 'min_idx', 'pm', 'min', 'max_idx', or searches for the smallest/largest element (Selection Sort logic). Bubble sort MUST compare adjacent elements (j, j+1).";
   } else if (algoType === AlgorithmType.SELECTION) {
-    algoRules = "ALGORITHM MISMATCH CHECK: This is SELECTION SORT. You MUST REJECT logic that strictly swaps adjacent elements continuously without finding a minimum first. The logic MUST involve finding a minimum element (min_idx).";
+    algoRules = "ALGORITHM MISMATCH CHECK: This is SELECTION SORT. 1. Logic MUST involve finding a minimum OR maximum element index (pm/min_idx). 2. CRITICAL: The inner search loop MUST start from 'i+1'. If the user writes a loop starting from 0 or 1 (e.g. range(0, n)), REJECT it. Feedback: 'خطأ قاتل: الحلقة الداخلية في فرز الاختيار يجب أن تبدأ من i+1 (العنصر التالي) لأن العناصر السابقة (0 إلى i) مرتبة بالفعل.'.";
   }
 
   const prompt = `
@@ -52,8 +52,8 @@ export const validateSnippet = async (
     2. If Target is 'inner_loop' (Bubble Sort), the code MUST NOT contain the swap/comparison logic yet. If found, REJECT with feedback: "أحسنت، ولكن نركز الآن فقط على الحلقة الداخلية. سنضيف المقارنة في الخطوة القادمة.".
     
     3. FOR SELECTION SORT:
-       - If Target is 'init_min', REJECT if 'inner_search_loop' is present. Feedback: "نحن فقط نعرف المتغير min_idx الآن. حلقة البحث تأتي لاحقاً.".
-       - If Target is 'inner_search_loop', REJECT if 'final_swap' or 'update_min_logic' is present. Feedback: "ركز على كتابة حلقة البحث فقط. سنضيف المنطق داخلها في الخطوة التالية.".
+       - If Target is 'init_min', it implies initializing the index 'pm' (Position Min/Max). REJECT if 'inner_search_loop' is present. Feedback: "نحن فقط نعرف المتغير pm الآن. حلقة البحث تأتي لاحقاً.".
+       - If Target is 'inner_search_loop', REJECT if 'final_swap' or 'update_min_logic' (inside logic) is present. Feedback: "ركز على كتابة حلقة البحث فقط. سنضيف منطق تحديث pm داخلها في الخطوة التالية.".
     
     4. The goal is to force the user to build block-by-block. Reject full pasted solutions immediately.
 
@@ -71,9 +71,9 @@ export const validateSnippet = async (
     ${langRules}
 
     General Rules:
-    - Ascending/Descending both OK.
+    - Ascending (min_idx) AND Descending (max_idx) are BOTH ACCEPTABLE for Selection Sort, using 'pm' as the variable.
     - Bubble Sort: Loop range(n-1) or range(n-2) are both acceptable.
-    - Selection Sort: Check logic for finding min/max.
+    - Selection Sort: Logic for finding min OR max is acceptable using 'pm'.
     
     Output JSON: { "isValid": boolean, "feedback": "Brief Arabic text explaining error if invalid (e.g. 'لقد كتبت الحلقة الخارجية، ولكن أين الحلقة الداخلية؟' or 'شرط المقارنة غير موجود')." }
   `;
@@ -112,6 +112,9 @@ export const getStepSolution = async (
     2. If language is "python":
        - For Bubble Sort Outer Loop: use "range(n-1)".
        - For others: use standard python ranges.
+    3. For Selection Sort: 
+       - Use variable 'pm' for the position of min/max.
+       - CRITICAL: Inner loop MUST start from 'i+1' (e.g., range(i+1, n)).
     
     Output: RAW CODE ONLY. No markdown. No explanations. Just the lines needed for this step (or the full block if context requires).
   `;
@@ -147,8 +150,8 @@ export const transpileCode = async (
     
     Task:
     1. **STRICT ALGORITHM VERIFICATION**:
-       - If Target is 'BUBBLE': Check if logic compares adjacent elements (j, j+1). REJECT if it uses 'min_idx', 'min', or looks for smallest element (Selection Sort logic).
-       - If Target is 'SELECTION': Check if logic finds a minimum/maximum element ('min_idx'). REJECT if it only continuously swaps adjacent elements (Bubble Sort logic).
+       - If Target is 'BUBBLE': Check if logic compares adjacent elements (j, j+1). REJECT if it uses 'min_idx', 'pm', 'min', or looks for smallest element (Selection Sort logic).
+       - If Target is 'SELECTION': Check if logic finds a minimum OR maximum element index (conventionally 'pm'). CRITICAL: Check if inner loop starts from 'i+1'. REJECT if it starts from 0 (incorrect logic that ruins sorted part).
        - If logic does not match ${algoType}, return JSON { "error": "عذراً، الكود المكتوب لا يطابق خوارزمية ${algoType}. يرجى الالتزام بالخوارزمية المطلوبة." }.
 
     2. **TRANSPILATION** (Only if verification passes):
