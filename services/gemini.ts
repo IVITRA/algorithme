@@ -1,3 +1,4 @@
+
 import { GoogleGenAI } from "@google/genai";
 import { COMPILER_SYSTEM_PROMPT } from '../constants';
 import { TranspileResult, ValidationResult, AlgorithmType } from '../types';
@@ -22,6 +23,7 @@ export const validateSnippet = async (
       model: MODEL_NAME,
       contents: [{ role: 'user', parts: [{ text: prompt }] }],
       config: {
+        systemInstruction: COMPILER_SYSTEM_PROMPT,
         responseMimeType: "application/json",
       }
     });
