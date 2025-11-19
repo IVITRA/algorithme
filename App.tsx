@@ -124,20 +124,22 @@ const App: React.FC = () => {
       const sandbox = new Function('n', 'cmp', 'swp', result.jsCode);
       sandbox(n, cmp, swp);
 
-      // 4. Validation: Check if Sorted
-      let isSorted = true;
+      // 4. Validation: Check if Sorted (Ascending OR Descending)
+      let isAscending = true;
+      let isDescending = true;
+      
       for (let i = 0; i < n - 1; i++) {
-        if (workingArray[i] > workingArray[i + 1]) {
-          isSorted = false;
-          break;
-        }
+        if (workingArray[i] > workingArray[i + 1]) isAscending = false;
+        if (workingArray[i] < workingArray[i + 1]) isDescending = false;
       }
 
-      if (isSorted) {
+      if (isAscending || isDescending) {
          // Add Green Sweep Animation with strict highlighting
          const sortedIndices = Array.from({length: n}, (_, i) => i);
          steps.push({ type: 'sorted', indices: sortedIndices, description: "تم الفرز بنجاح!" });
-         setConsoleOutput({ type: 'success', text: "تمت المحاكاة بنجاح! الكود صحيح 100%." });
+         
+         const sortType = isAscending ? "تصاعدي" : "تنازلي";
+         setConsoleOutput({ type: 'success', text: `تمت المحاكاة بنجاح! الكود صحيح (ترتيب ${sortType}).` });
       } else {
          setConsoleOutput({ type: 'error', text: "انتهت المحاكاة ولكن المصفوفة ليست مرتبة بشكل صحيح. تأكد من المنطق." });
       }
