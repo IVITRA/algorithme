@@ -2,9 +2,7 @@ import { GoogleGenAI } from "@google/genai";
 import { COMPILER_SYSTEM_PROMPT } from '../constants';
 import { TranspileResult, ValidationResult, AlgorithmType } from '../types';
 
-// Use import.meta.env for Vite support to prevent "process is not defined" crash
-const apiKey = import.meta.env.VITE_API_KEY || "";
-const ai = new GoogleGenAI({ apiKey });
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 const MODEL_NAME = "gemini-2.5-flash";
 
 export const validateSnippet = async (
@@ -24,7 +22,7 @@ export const validateSnippet = async (
       model: MODEL_NAME,
       contents: [{ role: 'user', parts: [{ text: prompt }] }],
       config: {
-        systemInstruction: COMPILER_SYSTEM_PROMPT,
+        // Removed COMPILER_SYSTEM_PROMPT as it forces a different JSON schema
         responseMimeType: "application/json",
       }
     });
