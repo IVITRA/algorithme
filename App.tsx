@@ -1,16 +1,17 @@
 
 import React, { useState, useRef } from 'react';
 import { AlgorithmType, CodeLanguage, SimulationStep } from './types';
-import { BUBBLE_SORT_DATA, SELECTION_SORT_DATA } from './constants';
+import { BUBBLE_SORT_DATA, BUBBLE_SORT_OPTIMIZED_DATA, SELECTION_SORT_DATA } from './constants';
 import { Visualizer, VisualizerRef } from './components/Visualizer';
 import { StepTrainer } from './components/StepTrainer';
 import { transpileCode } from './services/gemini';
-import { BrainCircuit, Play, ArrowLeft, Check, AlertTriangle, Loader2, Terminal, Settings2, Code } from 'lucide-react';
+import { BrainCircuit, Play, ArrowLeft, Check, AlertTriangle, Loader2, Terminal, Settings2, Code, Sparkles, History } from 'lucide-react';
 
 const App: React.FC = () => {
   const [currentAlgo, setCurrentAlgo] = useState<AlgorithmType>(AlgorithmType.NONE);
   const [language, setLanguage] = useState<CodeLanguage>('pseudo');
   const [showLangSelector, setShowLangSelector] = useState(false);
+  const [showBubbleVariantSelector, setShowBubbleVariantSelector] = useState(false);
   const [mode, setMode] = useState<'trainer' | 'playground'>('trainer');
   const [code, setCode] = useState('');
   
@@ -21,17 +22,31 @@ const App: React.FC = () => {
 
   const getData = () => {
     if (currentAlgo === AlgorithmType.BUBBLE) return BUBBLE_SORT_DATA;
+    if (currentAlgo === AlgorithmType.BUBBLE_OPTIMIZED) return BUBBLE_SORT_OPTIMIZED_DATA;
     if (currentAlgo === AlgorithmType.SELECTION) return SELECTION_SORT_DATA;
     return null;
   };
   const data = getData();
 
   const handleAlgoSelect = (type: AlgorithmType) => {
+    if (type === AlgorithmType.BUBBLE) {
+      setShowBubbleVariantSelector(true);
+    } else {
+      setAlgoAndShowLang(type);
+    }
+  };
+
+  const setAlgoAndShowLang = (type: AlgorithmType) => {
     setCurrentAlgo(type);
-    setShowLangSelector(true); // Show selector immediately after choosing algo
+    setShowLangSelector(true);
     setMode('trainer');
     setConsoleOutput(null);
     if (visualizerRef.current) visualizerRef.current.reset();
+  };
+
+  const handleBubbleVariantSelect = (optimized: boolean) => {
+    setShowBubbleVariantSelector(false);
+    setAlgoAndShowLang(optimized ? AlgorithmType.BUBBLE_OPTIMIZED : AlgorithmType.BUBBLE);
   };
 
   const confirmLanguage = (lang: CodeLanguage) => {
@@ -47,7 +62,7 @@ const App: React.FC = () => {
 
   const checkLanguageMismatch = (codeSnippet: string): string | null => {
     const pyIndicators = [/\bdef\b/, /\brange\b/, /:\s*$/m, /#.*$/m, /print\(/];
-    const pseudoIndicators = [/\bPour\b/i, /\bFin\b/i, /\bSi\b/i, /\bAlors\b/i, /\bDébut\b/i, /\bfaire\b/i];
+    const pseudoIndicators = [/\bPour\b/i, /\bFin\b/i, /\bSi\b/i, /\bAlors\b/i, /\bDébut\b/i, /\bfaire\b/i, /\bTant que\b/i];
   
     if (language === 'python') {
       if (pseudoIndicators.some(r => r.test(codeSnippet))) {
@@ -159,6 +174,66 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-200 font-tajawal flex flex-col overflow-x-hidden">
       
+      {/* Bubble Sort Variant Selector Modal */}
+      {showBubbleVariantSelector && (
+        <div className="fixed inset-0 bg-slate-950/95 z-[110] flex items-center justify-center p-4 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-slate-900 border border-slate-700 rounded-3xl p-8 max-w-2xl w-full shadow-2xl">
+             <div className="text-center mb-8">
+                <h3 className="text-2xl font-bold text-white mb-2">اختر نوع خوارزمية الفقاعات</h3>
+                <p className="text-slate-400">هناك أكثر من طريقة لكتابة الحل. أيهما تفضل؟</p>
+             </div>
+
+             <div className="grid md:grid-cols-2 gap-6">
+                {/* Recommended Option */}
+                <button 
+                   onClick={() => handleBubbleVariantSelect(true)}
+                   className="relative p-6 rounded-2xl border-2 border-emerald-500/50 bg-emerald-900/10 hover:bg-emerald-900/20 hover:border-emerald-400 transition-all group text-right"
+                >
+                   <div className="absolute top-3 left-3 bg-emerald-500 text-white text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1 shadow-lg shadow-emerald-500/20">
+                      <Sparkles className="w-3 h-3" />
+                      موصى به
+                   </div>
+                   <div className="w-12 h-12 bg-emerald-500/20 rounded-full flex items-center justify-center mb-4 text-emerald-300">
+                      <BrainCircuit className="w-6 h-6" />
+                   </div>
+                   <h4 className="text-xl font-bold text-white mb-2 group-hover:text-emerald-300 transition-colors">الطريقة المحسنة</h4>
+                   <p className="text-slate-400 text-sm leading-relaxed mb-4">
+                      استخدام حلقة <code>while</code> مع متغير منطقي <code>test</code>. هذه الطريقة أذكى لأنها تتوقف فوراً إذا انتهى الترتيب.
+                   </p>
+                   <div className="bg-slate-950/50 p-3 rounded-lg border border-slate-800 font-mono text-xs text-emerald-200/70 dir-ltr text-left">
+                      while test == False:<br/>&nbsp;&nbsp;...
+                   </div>
+                </button>
+
+                {/* Standard Option */}
+                <button 
+                   onClick={() => handleBubbleVariantSelect(false)}
+                   className="relative p-6 rounded-2xl border-2 border-slate-700 bg-slate-800/30 hover:bg-slate-800/60 hover:border-slate-600 transition-all group text-right"
+                >
+                    <div className="w-12 h-12 bg-slate-700/50 rounded-full flex items-center justify-center mb-4 text-slate-400">
+                      <History className="w-6 h-6" />
+                   </div>
+                   <h4 className="text-xl font-bold text-slate-300 mb-2 group-hover:text-white transition-colors">الطريقة التقليدية</h4>
+                   <p className="text-slate-500 text-sm leading-relaxed mb-4">
+                      استخدام حلقتين <code>for</code> متداخلتين. طريقة سهلة الفهم ولكنها بطيئة لأنها تكمل التكرار حتى لو كانت القائمة مرتبة.
+                   </p>
+                   <div className="bg-slate-950/50 p-3 rounded-lg border border-slate-800 font-mono text-xs text-slate-500 dir-ltr text-left">
+                      for i in range(n):<br/>&nbsp;&nbsp;for j in range(n)...
+                   </div>
+                </button>
+             </div>
+             <div className="mt-8 flex justify-center">
+                <button 
+                   onClick={() => setShowBubbleVariantSelector(false)}
+                   className="text-slate-500 hover:text-white text-sm font-medium transition-colors"
+                >
+                   إلغاء
+                </button>
+             </div>
+          </div>
+        </div>
+      )}
+
       {/* Language Selector Modal */}
       {showLangSelector && (
         <div className="fixed inset-0 bg-slate-950/90 z-[100] flex items-center justify-center p-4 backdrop-blur-sm animate-fadeIn">

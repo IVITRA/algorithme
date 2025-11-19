@@ -2,8 +2,8 @@
 import { AlgorithmType, AlgorithmData } from './types';
 
 export const BUBBLE_SORT_DATA: AlgorithmData = {
-  title: "فرز الفقاعات (Tri à Bulle)",
-  description: "خوارزمية تعتمد على تبادل العناصر المتجاورة حتى تصعد العناصر الكبيرة للأعلى (أو العكس).",
+  title: "فرز الفقاعات (Tri à Bulle Classique)",
+  description: "النسخة التقليدية: تعتمد على حلقتين متداخلتين (تكرار ثابت).",
   starterCode: {
     pseudo: `// المتغيرات: T (جدول), N (عدد العناصر)
 // ابدأ بكتابة الحلقة الخارجية...`,
@@ -28,6 +28,39 @@ export const BUBBLE_SORT_DATA: AlgorithmData = {
       question: "الخطوة 3: المقارنة والتبديل",
       hint: "داخل الحلقة الداخلية، قارن العنصر الحالي (j) بالعنصر التالي (j+1) وبدل بينهما إذا كان الترتيب خاطئاً.",
       expectedConcept: "compare_swap"
+    }
+  ]
+};
+
+export const BUBBLE_SORT_OPTIMIZED_DATA: AlgorithmData = {
+  title: "فرز الفقاعات المحسن (Optimisé - الموصى به)",
+  description: "نسخة ذكية تستخدم متغير منطقي (test) للتوقف فوراً عند انتهاء الترتيب.",
+  starterCode: {
+    pseudo: `// المتغيرات: T (جدول), N (عدد العناصر)
+// سنستخدم حلقة تكرار (Répéter)
+test <- Faux`,
+    python: `# المتغيرات: arr (القائمة), n (الطول)
+# سنستخدم حلقة while مع متغير test
+test = False`
+  },
+  steps: [
+    {
+      id: 1,
+      question: "الخطوة 1: هيكل التكرار والتهيئة",
+      hint: "بايثون: استخدم 'while test == False' وأعد ضبط 'test = True' في أول سطر داخل الحلقة.\nPseudo: استخدم 'Répéter' (كرر) ... وأعد ضبط 'test <- Vrai' في البداية.",
+      expectedConcept: "loop_structure_and_reset"
+    },
+    {
+      id: 2,
+      question: "الخطوة 2: شرط التوقف (Pseudo فقط) والحلقة الداخلية",
+      hint: "بايثون: اكتب حلقة for للمرور على العناصر (range(n-1)).\nPseudo: اكتب حلقة Pour وأغلق التكرار بـ 'Jusqu'à (test)'.",
+      expectedConcept: "inner_scan_loop"
+    },
+    {
+      id: 3,
+      question: "الخطوة 3: المقارنة والتبديل وتحديث الإشارة",
+      hint: "إذا كان العنصر الحالي أكبر من التالي (T[i] > T[i+1]):\n1. بدل بينهما.\n2. اجعل test = False (أو Faux) ليعرف البرنامج أن الترتيب لم ينته بعد.",
+      expectedConcept: "swap_and_flag"
     }
   ]
 };
@@ -92,6 +125,8 @@ Rules:
 5. Do NOT define functions. Just write the loop logic.
 6. Do NOT optimize or fix the user's logic (e.g. if they loop too far, keep it).
 7. For Python \`range(n-1)\`, output JS \`i < n-1\`.
+8. For boolean flags (test=False), map them to JS booleans (let test = false).
+9. For Pseudo 'Répéter ... Jusqu'à (cond)', output JS 'do { ... } while (!cond)'. Note the negation: Jusqu'à(True) means Stop when True. JS while(cond) means Continue when True. So JS while = !PseudoCondition.
 
 Output Format:
 JSON ONLY: { "jsCode": "string", "error": "string | null" }

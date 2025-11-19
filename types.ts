@@ -1,6 +1,7 @@
 
 export enum AlgorithmType {
   BUBBLE = 'BUBBLE',
+  BUBBLE_OPTIMIZED = 'BUBBLE_OPTIMIZED',
   SELECTION = 'SELECTION',
   NONE = 'NONE'
 }
