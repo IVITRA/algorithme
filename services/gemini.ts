@@ -39,6 +39,11 @@ export const validateSnippet = async (
     The user is building the algorithm step-by-step. The code MAY contain parts from previous steps (e.g. Outer Loop).
     You must verify ONLY if the **Target Step Concept** is currently implemented correctly within the context of the code.
     
+    STRICT PACING RULES (Incremental Learning):
+    1. If Target is 'outer_loop', the code MUST NOT contain the inner loop yet. If found, REJECT with feedback: "الرجاء الالتزام بالخطوة الحالية فقط (الحلقة الخارجية). لا تسبق الأحداث!".
+    2. If Target is 'inner_loop', the code MUST NOT contain the swap/comparison logic yet. If found, REJECT with feedback: "أحسنت، ولكن نركز الآن فقط على الحلقة الداخلية. سنضيف المقارنة في الخطوة القادمة.".
+    3. The goal is to force the user to build block-by-block. Reject full pasted solutions.
+
     Validation Rules:
     1. Ignore errors in parts of the code that are NOT related to the current concept (unless they break the code entirely).
     2. Focus: Is the logic for '${concept}' present and correct?
