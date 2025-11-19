@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { ConsciousnessStep, AlgorithmType, CodeLanguage } from '../types';
 import { validateSnippet, getStepSolution } from '../services/gemini';
@@ -73,7 +72,7 @@ export const StepTrainer: React.FC<StepTrainerProps> = ({ steps, algoType, langu
     setFeedback(null);
 
     // 2. Validate Logic with AI
-    const result = await validateSnippet(input, currentStep.expectedConcept, algoType);
+    const result = await validateSnippet(input, currentStep.expectedConcept, algoType, language);
 
     setIsValidating(false);
     if (result.isValid) {

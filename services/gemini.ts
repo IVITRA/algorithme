@@ -12,7 +12,8 @@ const MODEL_NAME = "gemini-2.5-flash";
 export const validateSnippet = async (
   snippet: string,
   concept: string,
-  algoType: AlgorithmType
+  algoType: AlgorithmType,
+  language: string
 ): Promise<ValidationResult> => {
   
   // Context-aware validation to prevent "Right Code, Wrong Question"
@@ -23,22 +24,33 @@ export const validateSnippet = async (
      strictContext = "CRITICAL: The user MUST write a Loop definition (For/Pour). If they only write an IF statement, mark it as INVALID.";
   }
 
+  // Language specific strictness
+  let langRules = "";
+  if (language === 'python') {
+    langRules = "STRICT PYTHON SYNTAX: Use 'if/else', 'for/in', 'range'. REJECT 'Si/Alors', 'Pour/Faire', 'Fin'. Do not mix English and French keywords.";
+  } else {
+    langRules = "STRICT PSEUDO SYNTAX: Use 'Si/Alors', 'Pour/Faire', 'Fin'. REJECT 'if ... alors' (mixed). REJECT python-specific syntax like 'def' or colons ':' without keywords. Keywords are French (Pour, Si, Alors, Fin).";
+  }
+
   const prompt = `
     You are a strict code reviewer for a sorting algorithm tutorial.
     Algorithm: ${algoType}
     Target Step Concept: ${concept}
+    Selected Language: ${language}
     User Code: \`${snippet}\`
 
     Context Validation Rules:
     ${strictContext}
 
+    Language Syntax Rules:
+    ${langRules}
+
     General Rules:
     - Ascending/Descending both OK.
     - Bubble Sort: Loop range(n-1) or range(n-2) are both acceptable.
     - Selection Sort: Check logic for finding min/max.
-    - Syntax: Python (def/range) or Pseudo (Pour/Faire) are acceptable.
     
-    Output JSON: { "isValid": boolean, "feedback": "Brief Arabic text explaining error if invalid (e.g. 'لقد كتبت حلقة تكرار، والمطلوب هو شرط المقارنة فقط')." }
+    Output JSON: { "isValid": boolean, "feedback": "Brief Arabic text explaining error if invalid (e.g. 'لقد كتبت حلقة تكرار، والمطلوب هو شرط المقارنة فقط' or 'لا تخلط بين صيغة بايثون والخوارزمية')." }
   `;
 
   try {
