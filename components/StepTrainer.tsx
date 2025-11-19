@@ -22,7 +22,7 @@ export const StepTrainer: React.FC<StepTrainerProps> = ({ steps, algoType, langu
   const [failedAttempts, setFailedAttempts] = useState<Set<string>>(new Set());
   const [solutionMode, setSolutionMode] = useState<{active: boolean, timeLeft: number}>({ active: false, timeLeft: 0 });
   const [userDraft, setUserDraft] = useState('');
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const currentStep = steps[currentStepIdx];
 

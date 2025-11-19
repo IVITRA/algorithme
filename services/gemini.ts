@@ -1,11 +1,10 @@
-
 import { GoogleGenAI } from "@google/genai";
 import { COMPILER_SYSTEM_PROMPT } from '../constants';
 import { TranspileResult, ValidationResult, AlgorithmType } from '../types';
 
 // Use import.meta.env for Vite support to prevent "process is not defined" crash
-// Using type assertion to avoid TS errors regarding 'env' on ImportMeta
-const apiKey = (import.meta as any).env.VITE_API_KEY;
+// @ts-ignore
+const apiKey = import.meta.env.VITE_API_KEY || "";
 
 const ai = new GoogleGenAI({ apiKey });
 const MODEL_NAME = "gemini-2.5-flash";
