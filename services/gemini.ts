@@ -14,11 +14,31 @@ export const validateSnippet = async (
   concept: string,
   algoType: AlgorithmType
 ): Promise<ValidationResult> => {
+  
+  // Context-aware validation to prevent "Right Code, Wrong Question"
+  let strictContext = "";
+  if (concept === 'compare_and_swap' || concept === 'update_min_index' || concept === 'swap_min') {
+     strictContext = "CRITICAL: The user should ONLY write the Logic inside the loop (IF statement or Swap). If the user writes a Loop definition (For/Pour), mark it as INVALID. The question asks 'What to do inside?', not for the loop itself.";
+  } else if (concept.includes('loop')) {
+     strictContext = "CRITICAL: The user MUST write a Loop definition (For/Pour). If they only write an IF statement, mark it as INVALID.";
+  }
+
   const prompt = `
-    Validate: ${algoType} -> ${concept}.
-    Code: \`${snippet}\`
-    Rules: Ascending/Descending both OK. Bubble Sort loop n-2/n-1 both OK.
-    Output JSON: { "isValid": boolean, "feedback": "Brief Arabic text" }
+    You are a strict code reviewer for a sorting algorithm tutorial.
+    Algorithm: ${algoType}
+    Target Step Concept: ${concept}
+    User Code: \`${snippet}\`
+
+    Context Validation Rules:
+    ${strictContext}
+
+    General Rules:
+    - Ascending/Descending both OK.
+    - Bubble Sort: Loop range(n-1) or range(n-2) are both acceptable.
+    - Selection Sort: Check logic for finding min/max.
+    - Syntax: Python (def/range) or Pseudo (Pour/Faire) are acceptable.
+    
+    Output JSON: { "isValid": boolean, "feedback": "Brief Arabic text explaining error if invalid (e.g. 'لقد كتبت حلقة تكرار، والمطلوب هو شرط المقارنة فقط')." }
   `;
 
   try {
@@ -26,7 +46,7 @@ export const validateSnippet = async (
       model: MODEL_NAME,
       contents: [{ role: 'user', parts: [{ text: prompt }] }],
       config: {
-        systemInstruction: COMPILER_SYSTEM_PROMPT,
+        // Removed COMPILER_SYSTEM_PROMPT to avoid confusing the model (Validator vs Transpiler)
         responseMimeType: "application/json",
       }
     });
