@@ -2,7 +2,9 @@ import { GoogleGenAI } from "@google/genai";
 import { COMPILER_SYSTEM_PROMPT } from '../constants';
 import { TranspileResult, ValidationResult, AlgorithmType } from '../types';
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// Use import.meta.env for Vite support to prevent "process is not defined" crash
+const apiKey = import.meta.env.VITE_API_KEY || "";
+const ai = new GoogleGenAI({ apiKey });
 const MODEL_NAME = "gemini-2.5-flash";
 
 export const validateSnippet = async (
