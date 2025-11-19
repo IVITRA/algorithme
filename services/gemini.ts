@@ -1,3 +1,4 @@
+
 import { GoogleGenAI } from "@google/genai";
 import { COMPILER_SYSTEM_PROMPT } from '../constants';
 import { TranspileResult, ValidationResult, AlgorithmType } from '../types';
@@ -16,14 +17,6 @@ export const validateSnippet = async (
   language: string
 ): Promise<ValidationResult> => {
   
-  // Context-aware validation to prevent "Right Code, Wrong Question"
-  let strictContext = "";
-  if (concept === 'compare_and_swap' || concept === 'update_min_index' || concept === 'swap_min') {
-     strictContext = "CRITICAL: The user should ONLY write the Logic inside the loop (IF statement or Swap). If the user writes a Loop definition (For/Pour), mark it as INVALID. The question asks 'What to do inside?', not for the loop itself.";
-  } else if (concept.includes('loop')) {
-     strictContext = "CRITICAL: The user MUST write a Loop definition (For/Pour). If they only write an IF statement, mark it as INVALID.";
-  }
-
   // Language specific strictness
   let langRules = "";
   if (language === 'python') {
@@ -33,14 +26,25 @@ export const validateSnippet = async (
   }
 
   const prompt = `
-    You are a strict code reviewer for a sorting algorithm tutorial.
+    You are a strict code reviewer for an interactive algorithm tutorial where the user builds code INCREMENTALLY.
     Algorithm: ${algoType}
     Target Step Concept: ${concept}
     Selected Language: ${language}
-    User Code: \`${snippet}\`
+    Full User Code So Far: 
+    \`\`\`
+    ${snippet}
+    \`\`\`
 
-    Context Validation Rules:
-    ${strictContext}
+    Task:
+    The user is building the algorithm step-by-step. The code MAY contain parts from previous steps (e.g. Outer Loop).
+    You must verify ONLY if the **Target Step Concept** is currently implemented correctly within the context of the code.
+    
+    Validation Rules:
+    1. Ignore errors in parts of the code that are NOT related to the current concept (unless they break the code entirely).
+    2. Focus: Is the logic for '${concept}' present and correct?
+    3. If '${concept}' is 'outer_loop', check for the main loop iteration.
+    4. If '${concept}' is 'inner_loop', check if it is nested correctly inside the outer loop.
+    5. If '${concept}' is 'compare_swap', check if the IF logic and SWAP logic exist inside the inner loop.
 
     Language Syntax Rules:
     ${langRules}
@@ -50,7 +54,7 @@ export const validateSnippet = async (
     - Bubble Sort: Loop range(n-1) or range(n-2) are both acceptable.
     - Selection Sort: Check logic for finding min/max.
     
-    Output JSON: { "isValid": boolean, "feedback": "Brief Arabic text explaining error if invalid (e.g. 'لقد كتبت حلقة تكرار، والمطلوب هو شرط المقارنة فقط' or 'لا تخلط بين صيغة بايثون والخوارزمية')." }
+    Output JSON: { "isValid": boolean, "feedback": "Brief Arabic text explaining error if invalid (e.g. 'لقد كتبت الحلقة الخارجية، ولكن أين الحلقة الداخلية؟' or 'شرط المقارنة غير موجود')." }
   `;
 
   try {
@@ -58,7 +62,6 @@ export const validateSnippet = async (
       model: MODEL_NAME,
       contents: [{ role: 'user', parts: [{ text: prompt }] }],
       config: {
-        // Removed COMPILER_SYSTEM_PROMPT to avoid confusing the model (Validator vs Transpiler)
         responseMimeType: "application/json",
       }
     });
@@ -78,14 +81,18 @@ export const getStepSolution = async (
   hint: string
 ): Promise<string> => {
   const prompt = `
-    Provide correct ${language} code for ${algoType} step: ${concept}.
+    The user is building ${algoType} code incrementally.
+    Provide the CODE SNIPPET that implements the step: ${concept}.
+    Language: ${language}.
     Context: ${hint}.
+    
     CRITICAL RULES:
     1. If language is "pseudo", loops MUST end with "faire" (e.g., Pour i de 0 à N-1 faire).
     2. If language is "python":
        - For Bubble Sort Outer Loop: use "range(n-1)".
        - For others: use standard python ranges.
-    Output: RAW CODE ONLY. No markdown. No explanations.
+    
+    Output: RAW CODE ONLY. No markdown. No explanations. Just the lines needed for this step (or the full block if context requires).
   `;
 
   try {

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { ConsciousnessStep, AlgorithmType, CodeLanguage } from '../types';
 import { validateSnippet, getStepSolution } from '../services/gemini';
@@ -7,7 +8,7 @@ interface StepTrainerProps {
   steps: ConsciousnessStep[];
   algoType: AlgorithmType;
   language: CodeLanguage;
-  onComplete: () => void;
+  onComplete: (finalCode: string) => void;
 }
 
 export const StepTrainer: React.FC<StepTrainerProps> = ({ steps, algoType, language, onComplete }) => {
@@ -76,7 +77,7 @@ export const StepTrainer: React.FC<StepTrainerProps> = ({ steps, algoType, langu
 
     setIsValidating(false);
     if (result.isValid) {
-      setFeedback({ type: 'success', text: result.feedback || "إجابة صحيحة! أحسنت." });
+      setFeedback({ type: 'success', text: result.feedback || "إجابة صحيحة! أكمل البناء." });
     } else {
       setFeedback({ type: 'error', text: result.feedback });
       // Only increment failure for LOGIC errors, not syntax mismatch
@@ -88,7 +89,8 @@ export const StepTrainer: React.FC<StepTrainerProps> = ({ steps, algoType, langu
     setUserDraft(input);
     setIsGettingSolution(true);
     
-    const solution = await getStepSolution(
+    // We ask for the solution to append to the current input if possible, or just the snippet
+    const solutionSnippet = await getStepSolution(
         currentStep.expectedConcept, 
         algoType, 
         language, 
@@ -96,20 +98,27 @@ export const StepTrainer: React.FC<StepTrainerProps> = ({ steps, algoType, langu
     );
     
     setIsGettingSolution(false);
-    setInput(solution);
+    // In builder mode, we might want to show the snippet inserted? 
+    // For simplicity, let's just show the snippet and let user copy/integrate or replace.
+    // But the user requested "Show Solution" behavior.
+    // Let's append it if it looks like a block, or replace if empty.
+    // Actually, the safest is to show the specific snippet requested.
+    setInput(prev => prev + "\n" + solutionSnippet);
+    
     setSolutionMode({ active: true, timeLeft: 30 });
-    setFeedback({ type: 'success', text: "هذا هو الحل الصحيح. سيختفي بعد 30 ثانية!" });
+    setFeedback({ type: 'success', text: "تم إضافة الحل المقترح للكود. سيختفي بعد 30 ثانية!" });
   };
 
   const handleNext = () => {
     setFeedback(null);
-    setInput('');
+    // DO NOT CLEAR INPUT - PERSIST CODE FOR NEXT STEP
+    // setInput(''); 
     setFailedAttempts(new Set());
     setSolutionMode({ active: false, timeLeft: 0 });
     if (currentStepIdx < steps.length - 1) {
       setCurrentStepIdx(prev => prev + 1);
     } else {
-      onComplete();
+      onComplete(input); // Pass the final built code
     }
   };
 
@@ -132,7 +141,7 @@ export const StepTrainer: React.FC<StepTrainerProps> = ({ steps, algoType, langu
             <span className="bg-slate-800 px-2 py-0.5 rounded font-mono text-indigo-400 font-bold">
               {currentStepIdx + 1} / {steps.length}
             </span>
-            <span className="uppercase tracking-wider text-[10px] md:text-xs">Mindset Training</span>
+            <span className="uppercase tracking-wider text-[10px] md:text-xs">Code Builder</span>
           </div>
           
           {solutionMode.active && (
@@ -156,7 +165,7 @@ export const StepTrainer: React.FC<StepTrainerProps> = ({ steps, algoType, langu
         </div>
 
         {/* Editor Container */}
-        <div className="relative group min-h-[180px] flex flex-col">
+        <div className="relative group min-h-[250px] flex flex-col">
           <div className="absolute top-2 right-2 text-[10px] text-slate-500 bg-slate-900 px-2 py-1 rounded border border-slate-800 pointer-events-none z-10 font-mono shadow-sm">
              {language === 'python' ? 'Python Mode' : 'Pseudo Mode'}
           </div>
@@ -164,8 +173,8 @@ export const StepTrainer: React.FC<StepTrainerProps> = ({ steps, algoType, langu
             value={input}
             onChange={(e) => setInput(e.target.value)}
             disabled={solutionMode.active}
-            placeholder={language === 'python' ? "for i in range(n-1):\n    ..." : "Pour i de 0 à N-1 faire\n    ..."}
-            className={`w-full flex-1 min-h-[150px] bg-slate-950 border rounded-xl p-4 font-mono text-sm md:text-base text-indigo-100 focus:outline-none resize-y transition-all leading-relaxed ${
+            placeholder={language === 'python' ? "# ابدأ بكتابة الكود هنا..." : "// ابدأ بكتابة الكود هنا..."}
+            className={`w-full flex-1 min-h-[250px] bg-slate-950 border rounded-xl p-4 font-mono text-sm md:text-base text-indigo-100 focus:outline-none resize-y transition-all leading-relaxed ${
               solutionMode.active 
                 ? 'border-amber-500/50 opacity-90 cursor-not-allowed bg-amber-900/5' 
                 : 'border-slate-700 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50'
@@ -200,7 +209,7 @@ export const StepTrainer: React.FC<StepTrainerProps> = ({ steps, algoType, langu
              onClick={handleNext}
              className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-all hover:translate-y-[-2px] shadow-lg shadow-emerald-600/20"
            >
-             <span>{currentStepIdx === steps.length - 1 ? 'الانتقال للمختبر' : 'التالي'}</span>
+             <span>{currentStepIdx === steps.length - 1 ? 'إنهاء والذهاب للمختبر' : 'الخطوة التالية (احتفظ بالكود)'}</span>
              <ArrowRight className="w-5 h-5" />
            </button>
           ) : (
@@ -211,7 +220,7 @@ export const StepTrainer: React.FC<StepTrainerProps> = ({ steps, algoType, langu
                 className="flex-[2] bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-all hover:shadow-lg hover:shadow-indigo-600/20"
               >
                 {isValidating ? <Loader2 className="w-5 h-5 animate-spin" /> : <Code2 className="w-5 h-5" />}
-                <span>تحقق</span>
+                <span>تحقق من الخطوة الحالية</span>
               </button>
               
               {!solutionMode.active && (

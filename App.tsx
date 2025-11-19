@@ -39,9 +39,10 @@ const App: React.FC = () => {
     setShowLangSelector(false);
   };
 
-  const handleTrainerComplete = () => {
+  const handleTrainerComplete = (finalCode: string) => {
     setMode('playground');
-    if (data) setCode(data.starterCode[language]);
+    // Load the code built in the trainer, or fallback to starter if empty
+    setCode(finalCode || data?.starterCode[language] || '');
   };
 
   const checkLanguageMismatch = (codeSnippet: string): string | null => {
