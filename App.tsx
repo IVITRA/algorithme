@@ -81,7 +81,7 @@ const App: React.FC = () => {
 
     try {
       // 2. Transpile using AI (User Code -> JS)
-      const result = await transpileCode(code, language);
+      const result = await transpileCode(code, language, currentAlgo);
       
       if (result.error || !result.jsCode) {
         setConsoleOutput({ type: 'error', text: result.error || "فشل في فهم الكود." });
@@ -293,6 +293,7 @@ const App: React.FC = () => {
                     steps={data?.steps || []} 
                     algoType={currentAlgo} 
                     language={language}
+                    starterCode={data?.starterCode[language]}
                     onComplete={handleTrainerComplete}
                   />
                 </div>

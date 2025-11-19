@@ -8,12 +8,13 @@ interface StepTrainerProps {
   steps: ConsciousnessStep[];
   algoType: AlgorithmType;
   language: CodeLanguage;
+  starterCode?: string; // Add starter code prop
   onComplete: (finalCode: string) => void;
 }
 
-export const StepTrainer: React.FC<StepTrainerProps> = ({ steps, algoType, language, onComplete }) => {
+export const StepTrainer: React.FC<StepTrainerProps> = ({ steps, algoType, language, starterCode, onComplete }) => {
   const [currentStepIdx, setCurrentStepIdx] = useState(0);
-  const [input, setInput] = useState('');
+  const [input, setInput] = useState(starterCode || ''); // Initialize with starter code if available
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error' | 'warning', text: string } | null>(null);
   const [isValidating, setIsValidating] = useState(false);
   const [isGettingSolution, setIsGettingSolution] = useState(false);
@@ -25,6 +26,13 @@ export const StepTrainer: React.FC<StepTrainerProps> = ({ steps, algoType, langu
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const currentStep = steps[currentStepIdx];
+
+  // Update input if language changes (optional, but good if starterCode changes)
+  useEffect(() => {
+    if (currentStepIdx === 0 && !input.trim()) {
+        setInput(starterCode || '');
+    }
+  }, [starterCode, language]);
 
   useEffect(() => {
     if (solutionMode.active && solutionMode.timeLeft > 0) {
