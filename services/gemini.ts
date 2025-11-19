@@ -22,7 +22,6 @@ export const validateSnippet = async (
       model: MODEL_NAME,
       contents: [{ role: 'user', parts: [{ text: prompt }] }],
       config: {
-        // Removed COMPILER_SYSTEM_PROMPT as it forces a different JSON schema
         responseMimeType: "application/json",
       }
     });
